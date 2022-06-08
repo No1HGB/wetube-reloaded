@@ -1,0 +1,17 @@
+extends base.pug
+
+block content
+    //- see videoController, and it returns whole object of video
+    //- so be careful PATH!
+    video(src="/"+video.fileUrl, controls) 
+    div 
+        p=video.description 
+        small=video.createdAt 
+    div
+        small Uploaded by 
+        a(href=`/users/${video.owner._id}`) #{video.owner.name}
+    if String(video.owner._id) === String(loggedInUser._id) 
+        //- relative url
+        a(href=`${video.id}/edit`) Edit video &rarr;
+        br
+        a(href=`${video.id}/delete`) Delete video &rarr;
