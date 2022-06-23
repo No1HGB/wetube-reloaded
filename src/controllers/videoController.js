@@ -5,7 +5,9 @@ import User from "../models/User";
 //promise: the newest version of callback function
 //use async-await to wait until recieve database
 export const home = async (req, res) => {
-  const videos = await Video.find({}).sort({ createdAt: "desc" });
+  const videos = await Video.find({})
+    .sort({ createdAt: "desc" })
+    .populate("owner");
   //express automatically find in /views
   return res.render("home", { pageTitle: "Home", videos });
 };
@@ -123,9 +125,9 @@ export const search = async (req, res) => {
     videos = await Video.find({
       title: {
         //use Regular Expression to search(*refer mongodb query operator)
-        $regex: new RegExp(keyword, "i"),
+        $regex: new RegExp(`${keyword}$`, "i"),
       },
-    });
+    }).populate("owner");
   }
   return res.render("search", { pageTitle: "Search", videos });
 };

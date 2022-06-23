@@ -36,5 +36,6 @@ app.use("/videos", videoRouter);
 app.use("/users", userRouter);
 //static tells to express which file(folder) exposed
 app.use("/uploads", express.static("uploads"));
+app.use("/static", express.static("assets"));
 
 export default app;
