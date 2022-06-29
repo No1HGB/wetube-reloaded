@@ -1,5 +1,6 @@
-import Video from "../models/Video";
+import Video from "../client/js/Video";
 import User from "../models/User";
+import Comment from "../models/Comment";
 
 //callback function execute last
 //promise: the newest version of callback function
@@ -16,7 +17,8 @@ export const watch = async (req, res) => {
   //use ES6 grammer. same as const id = req.params.id
   const { id } = req.params;
   //mongoose: populate fills User info in owner(videoSchema ref)
-  const video = await Video.findById(id).populate("owner");
+  const video = await Video.findById(id).populate("owner").populate("comments");
+  console.log(video);
   if (!video) {
     return res.render("404", { pageTitle: "Video Not Found" });
   }
@@ -35,6 +37,7 @@ export const getEdit = async (req, res) => {
   //only owner of video can access this page
   //Js also compare type of data, so be careful type
   if (String(video.owner) !== String(_id)) {
+    req.flash("error", "Not authorized");
     return res.status(403).redirect("/");
   }
   return res.render("edit", { pageTitle: `Edit ${video.title}`, video });
@@ -46,7 +49,7 @@ export const postEdit = async (req, res) => {
   } = req.session;
   const { id } = req.params;
   const { title, description, hashtags } = req.body;
-  const video = await Video.exists({ _id: id }); //exists return boolean
+  const video = await Video.findById({ _id: id });
   const videoModified = await Video.findByIdAndUpdate(id, {
     title,
     description,
@@ -56,8 +59,10 @@ export const postEdit = async (req, res) => {
     return res.status(404).render("404", { pageTitle: "Video Not Found" });
   }
   if (String(videoModified.owner) !== String(_id)) {
+    req.flash("error", "You are not the owner of the video");
     return res.status(403).redirect("/");
   }
+  req.flash("success", "Changes saved.");
   return res.redirect(`/videos/${id}`);
 };
 
@@ -71,13 +76,14 @@ export const postUpload = async (req, res) => {
     user: { _id },
   } = req.session;
   //recieve req.file.path and change the name of variation
-  const { path: fileUrl } = req.file;
+  const { video, thumb } = req.files;
   const { title, description, hashtags } = req.body;
   try {
     const newVideo = await Video.create({
       title,
       description,
-      fileUrl,
+      fileUrl: video[0].path,
+      thumbUrl: thumb[0].path,
       owner: _id,
       hashtags: Video.formatHashtags(hashtags),
     });
@@ -130,4 +136,37 @@ export const search = async (req, res) => {
     }).populate("owner");
   }
   return res.render("search", { pageTitle: "Search", videos });
+};
+
+export const registerView = async (req, res) => {
+  const { id } = req.params;
+  const video = await Video.findById(id);
+  if (!video) {
+    return res.sendStatus(404);
+  }
+  video.meta.views = video.meta.views + 1;
+  await video.save();
+  return res.sendStatus(200);
+};
+
+export const createComment = async (req, res) => {
+  const {
+    params: { id },
+    body: { text },
+    session: { user },
+  } = req;
+
+  const video = await Video.findById(id);
+  if (!video) {
+    return res.sendStatus(404);
+  }
+
+  const comment = await Comment.create({
+    text,
+    owner: user._id,
+    video: id,
+  });
+  video.comments.push(comment._id);
+  video.save();
+  return res.status(201).json({ newCommentId: comment._id });
 };

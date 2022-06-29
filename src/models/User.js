@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
   avatarUrl: String,
   //use array because it could contain many objects(videos)
   videos: [{ type: mongoose.Schema.Types.ObjectId, ref: "Video" }],
+  comments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Comment" }],
 });
 //mongoose middleware function
 userSchema.pre("save", async function () {

@@ -1,7 +1,8 @@
 import "dotenv/config"; //protect STRINGS using envs
 import "./db";
-import "./models/Video";
+import "./client/js/Video";
 import "./models/User";
+import "./models/Comment";
 import app from "./server";
 
 const PORT = 4000;
